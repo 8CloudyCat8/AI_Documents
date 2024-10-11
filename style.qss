@@ -1,0 +1,149 @@
+/* Основные настройки для приложения */
+QWidget {
+    background-color: white;
+    color: #333;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* Кнопки */
+QPushButton {
+    background-color: #d38cab;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+}
+
+QPushButton:hover {
+    background-color: #edbdde;
+}
+
+/* Поле ввода текста */
+QLineEdit, QTextEdit {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border: 1px solid #d38cab; /* Синий цвет при фокусе */
+}
+
+/* Метки */
+QLabel {
+    font-size: 14px;
+}
+
+/* Прогрессбар */
+QProgressBar {
+    border-radius: 10px;
+    background-color: #f0f0f0;
+}
+
+QProgressBar::chunk {
+    background-color: #b6caf3;
+    border-radius: 10px;
+}
+
+/* Слайдер */
+QSlider {
+    background: transparent;
+}
+
+QSlider::groove:horizontal {
+    height: 8px;
+    background: #33d6f9;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #edbdde;
+    border: none;
+    width: 24px;  /* Увеличиваем ширину для лучшего восприятия */
+    height: 24px; /* Увеличиваем высоту для круглой формы */
+    border-radius: 12px; /* Круглая ручка */
+    margin: -8px 0; /* Центрируем ручку на дорожке */
+}
+
+/* Альтернативный стиль для вертикального слайдера, если нужно */
+QSlider::groove:vertical {
+    width: 8px;
+    background: #d38cab;
+    border-radius: 4px;
+}
+
+QSlider::handle:vertical {
+    background: #d38cab;
+    border: none;
+    width: 24px; /* Увеличиваем ширину для лучшего восприятия */
+    height: 24px; /* Увеличиваем высоту для круглой формы */
+    border-radius: 12px; /* Круглая ручка */
+    margin: 0 -8px; /* Центрируем ручку на дорожке */
+}
+
+
+/* Чекбоксы */
+QCheckBox {
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: white;
+    border: 2px solid #d38cab; /* Синий цвет */
+    border-radius: 5px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #d38cab; /* Синий цвет */
+    border: 2px solid #d38cab; /* Синий цвет */
+    border-radius: 5px;
+}
+
+/* Формы */
+QFormLayout {
+    margin: 10px;
+}
+
+/* Табуляция */
+QTabWidget::tab-bar {
+    alignment: left; /* Вкладки выровнены по левому краю */
+}
+
+QTabBar::tab {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+QTabBar::tab:selected {
+    background: #d38cab; /* Синий цвет для выбранной вкладки */
+    color: white;
+}
+
+/* Групповые боксы */
+QGroupBox {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+/* Список виджетов */
+QListWidget {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+QListWidget::item {
+    padding: 10px;
+}
+
+QListWidget::item:selected {
+    background: #d38cab; /* Синий цвет для выбранного элемента */
+    color: white;
+}
