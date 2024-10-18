@@ -6,34 +6,32 @@ from torchtext.datasets import AG_NEWS
 from torchtext.data.utils import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
 from torchtext.data.functional import to_map_style_dataset
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
-# Hyperparameters
 BATCH_SIZE = 64
 EMBED_DIM = 64
-EPOCHS = 1
+EPOCHS = 10
 LR = 5.0
 MODEL_PATH = 'text_classification_model.pth'
 classes = ["World", "Sports", "Business", "Science/Technology"]
 
-# Load the dataset (AG_NEWS)
 train_iter, test_iter = AG_NEWS()
 
-# Tokenizer and Vocabulary
 tokenizer = get_tokenizer('basic_english')
+
+
 def yield_tokens(data_iter):
     for _, text in data_iter:
         yield tokenizer(text)
 
-# Build vocabulary
+
 vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
 vocab.set_default_index(vocab["<unk>"])
 
-# Create text and label pipelines
 text_pipeline = lambda x: vocab(tokenizer(x))
 label_pipeline = lambda x: int(x) - 1
 
-# Model definition
+
 class TextClassificationModel(nn.Module):
     def __init__(self, vocab_size, embed_dim, num_class):
         super(TextClassificationModel, self).__init__()
@@ -44,7 +42,7 @@ class TextClassificationModel(nn.Module):
         embedded = self.embedding(text, offsets)
         return self.fc(embedded)
 
-# Prepare data
+
 def collate_batch(batch):
     label_list, text_list, offsets = [], [], [0]
     for _label, _text in batch:
@@ -57,7 +55,7 @@ def collate_batch(batch):
     text_list = torch.cat(text_list)
     return label_list, text_list, offsets
 
-# Load datasets and split into train/validation sets
+
 train_dataset = to_map_style_dataset(train_iter)
 num_train = int(len(train_dataset) * 0.95)
 split_train_, split_valid_ = random_split(train_dataset, [num_train, len(train_dataset) - num_train])
@@ -65,11 +63,10 @@ split_train_, split_valid_ = random_split(train_dataset, [num_train, len(train_d
 train_dataloader = DataLoader(split_train_, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_batch)
 valid_dataloader = DataLoader(split_valid_, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_batch)
 
-# Get number of classes
 num_class = len(set([label for (label, text) in train_iter]))
 vocab_size = len(vocab)
 
-# Function to train model
+
 def train_model(model):
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
@@ -102,11 +99,10 @@ def train_model(model):
         valid_acc = evaluate(valid_dataloader)
         print(f'Epoch: {epoch}, Train Accuracy: {train_acc:.4f}, Validation Accuracy: {valid_acc:.4f}')
 
-    # Save the trained model
     torch.save(model.state_dict(), MODEL_PATH)
     print("Model saved!")
 
-# Load model
+
 def load_model(model_class):
     model = model_class(vocab_size, EMBED_DIM, num_class)
     try:
@@ -118,7 +114,7 @@ def load_model(model_class):
         train_model(model)
     return model
 
-# PyQt5 Application
+
 class TextClassifierApp(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -128,7 +124,6 @@ class TextClassifierApp(QtWidgets.QWidget):
     def initUI(self):
         self.setWindowTitle('Text Classification')
 
-        # Layout
         layout = QtWidgets.QVBoxLayout()
 
         self.model_choice = QtWidgets.QComboBox(self)
@@ -152,7 +147,6 @@ class TextClassifierApp(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-        # Load the default model
         self.model = load_model(TextClassificationModel)
 
     def predict_text(self):
@@ -168,10 +162,10 @@ class TextClassifierApp(QtWidgets.QWidget):
             self.result_label.setText('Please enter text to classify.')
 
     def train_model(self):
-        # Train the model on button click
         model_class = TextClassificationModel if self.model_choice.currentText() == "Basic Model" else TextClassificationModel
         self.model = model_class(vocab_size, EMBED_DIM, num_class)
         train_model(self.model)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

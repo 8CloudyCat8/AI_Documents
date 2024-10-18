@@ -1,51 +1,72 @@
-from transformers import (
-    TokenClassificationPipeline,
-    AutoModelForTokenClassification,
-    AutoTokenizer,
-)
-from transformers.pipelines import AggregationStrategy
-import numpy as np
+import sys
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel
 
-# Define keyphrase extraction pipeline
-class KeyphraseExtractionPipeline(TokenClassificationPipeline):
-    def __init__(self, model, *args, **kwargs):
-        super().__init__(
-            model=AutoModelForTokenClassification.from_pretrained(model),
-            tokenizer=AutoTokenizer.from_pretrained(model),
-            *args,
-            **kwargs
-        )
+data = {
+    'text': [
+        'Я люблю готовить пасту',
+        'Футбол - это захватывающий вид спорта',
+        'Инвестирование в акции - это умный шаг',
+        'Пицца - это моя любимая еда',
+        'На олимпиаде много спортсменов',
+        'Создание стартапа может быть прибыльным',
+        'Я пью кофе и ем торт',
+        'Баскетбол - моя страсть',
+        'Как запустить интернет-магазин',
+        'Салат с овощами полезен',
+        'У нас будет футбольный матч',
+        'Секреты успешного бизнеса',
+        'Я готовлю десерт',
+        'Мы играем в теннис каждый уикенд',
+        'Как открыть успешный бизнес',
+    ],
+    'class': [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]
+}
 
-    def postprocess(self, all_outputs):
-        results = super().postprocess(
-            all_outputs=all_outputs,
-            aggregation_strategy=AggregationStrategy.SIMPLE,
-        )
-        return np.unique([result.get("word").strip() for result in results])
+df = pd.DataFrame(data)
 
-# Load pipeline
-model_name = "ml6team/keyphrase-extraction-kbir-inspec"
-extractor = KeyphraseExtractionPipeline(model=model_name)
+X = df['text']
+y = df['class']
+model = make_pipeline(CountVectorizer(), MultinomialNB())
+model.fit(X, y)
 
-# Inference
-text = """
-Keyphrase extraction is a technique in text analysis where you extract the
-important keyphrases from a document. Thanks to these keyphrases humans can
-understand the content of a text very quickly and easily without reading it
-completely. Keyphrase extraction was first done primarily by human annotators,
-who read the text in detail and then wrote down the most important keyphrases.
-The disadvantage is that if you work with a lot of documents, this process
-can take a lot of time. 
 
-Here is where Artificial Intelligence comes in. Currently, classical machine
-learning methods, that use statistical and linguistic features, are widely used
-for the extraction process. Now with deep learning, it is possible to capture
-the semantic meaning of a text even better than these classical methods.
-Classical methods look at the frequency, occurrence and order of words
-in the text, whereas these neural approaches can capture long-term
-semantic dependencies and context of words in a text.
-""".replace("\n", " ")
+class TextClassifierApp(QWidget):
+    def __init__(self):
+        super().__init__()
 
-keyphrases = extractor(text)
+        self.setWindowTitle('Классификатор текстов')
+        self.setGeometry(100, 100, 400, 200)
 
-print(keyphrases)
+        self.layout = QVBoxLayout()
+
+        self.input_line = QLineEdit(self)
+        self.input_line.setPlaceholderText('Введите текст...')
+        self.layout.addWidget(self.input_line)
+
+        self.predict_button = QPushButton('Классифицировать', self)
+        self.predict_button.clicked.connect(self.predict)
+        self.layout.addWidget(self.predict_button)
+
+        self.result_label = QLabel('Результат: ', self)
+        self.layout.addWidget(self.result_label)
+
+        self.setLayout(self.layout)
+
+    def predict(self):
+        input_text = self.input_line.text()
+        if input_text:
+            prediction = model.predict([input_text])[0]
+            self.result_label.setText(f'Результат: класс {prediction}')
+        else:
+            self.result_label.setText('Введите текст для классификации.')
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = TextClassifierApp()
+    window.show()
+    sys.exit(app.exec_())

@@ -25,10 +25,11 @@ class AnalysisThread(QThread):
     result_ready = pyqtSignal(list)
     analysis_finished = pyqtSignal(dict)
 
-    def __init__(self, files_data, threshold):
+    def __init__(self, files_data, threshold, skip_words=1):
         super().__init__()
         self.files_data = files_data
         self.threshold = threshold
+        self.skip_words = skip_words
 
     def classify_text(self, sequence, theme):
         result = zero_shot_pipeline(
@@ -89,7 +90,9 @@ class AnalysisThread(QThread):
     async def extract_and_classify(self, text, theme):
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as pool:
-            term_sequences = [term.normalized for term in term_extractor(text)]
+            words = text.split()
+            selected_words = words[::self.skip_words + 1]
+            term_sequences = [term.normalized for term in term_extractor(' '.join(selected_words))]
             results = await self.run_in_executor(term_sequences, theme)
             filtered_results = [
                 (result['sequence'], result['scores'][0])
@@ -227,6 +230,12 @@ class App(QWidget):
         self.file_list_widget = QFormLayout()
         layout.addLayout(self.file_list_widget)
 
+        self.skip_words_label = QLabel('Шаг пропуска слов (0 - не пропускать):', self)
+        layout.addWidget(self.skip_words_label)
+
+        self.skip_words_input = QLineEdit(self)
+        layout.addWidget(self.skip_words_input)
+
         self.threshold_label = QLabel('Порог сходства: 0.900', self)
         layout.addWidget(self.threshold_label)
 
@@ -291,8 +300,9 @@ class App(QWidget):
         self.result_text.clear()
         threshold = self.slider.value() / 1000.0
 
+        skip_words = int(self.skip_words_input.text()) if self.skip_words_input.text().isdigit() else 0  # Получаем количество пропусков
         self.progress_bar.show()
-        self.thread = AnalysisThread(files_data, threshold)
+        self.thread = AnalysisThread(files_data, threshold, skip_words)  # Передаем параметр
         self.thread.progress.connect(self.update_progress)
         self.thread.new_result.connect(self.append_result)
         self.thread.analysis_finished.connect(self.save_results)
