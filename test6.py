@@ -3,7 +3,7 @@ import numpy as np
 import re
 from Stemmer import Stemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression  # Изменено
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 def text_cleaner(text):

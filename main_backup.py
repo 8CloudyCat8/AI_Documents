@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from docx import Document
-from gensim.models import Word2Vec
 from transformers import pipeline
 from concurrent.futures import ThreadPoolExecutor
 from rutermextract import TermExtractor
@@ -23,10 +22,11 @@ zero_shot_pipeline = pipeline(
 
 term_extractor = TermExtractor()
 
+# Initialize the morphological analyzer
 morph = pymorphy2.MorphAnalyzer()
 
+# Загрузка стоп-слов на русском языке
 stop_words = set(stopwords.words('russian'))
-
 
 class AnalysisThread(QThread):
     progress = pyqtSignal(int)
@@ -100,70 +100,20 @@ class AnalysisThread(QThread):
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as pool:
             words = text.split()
-
-            original_theme = theme
-
-            print(words)
-            print(len(words))
-
             selected_words = words[::self.skip_words + 1]
+            # Extract terms using term extractor
             term_sequences = [term.normalized for term in term_extractor(' '.join(selected_words))]
 
-            print(term_sequences)
-            print(len(term_sequences))
-
+            # Filter out everything except nouns
             filtered_tokens = [
                 word for word in term_sequences
                 if word not in stop_words and
-                   not re.search(r'\d', word)
+                   not re.search(r'\d', word) and
+                   morph.parse(word)[0].tag.POS == 'NOUN'  # Keep only nouns
             ]
 
-            print(filtered_tokens)
-            print(len(filtered_tokens))
-
-            corpus = filtered_tokens
-            model = Word2Vec([corpus], vector_size=100, min_count=1)
-
-            similar_words_list = []
-
-            if theme in model.wv.key_to_index:
-                print(f"Найдены слова, схожие со словом '{theme}':")
-                similar_words = model.wv.most_similar(theme, topn=100)
-
-                for i, (word, similarity) in enumerate(similar_words, start=1):
-                    print(f"{i}) {word} (сходство: {similarity:.2f})")
-                    similar_words_list.append((word, similarity))
-
-                print("Список схожих слов:", similar_words_list)
-            else:
-                print(f"Слово '{theme}' не найдено в тексте.")
-
-                word_counts = {word: words.count(word) for word in filtered_tokens}
-                most_common_word = max(word_counts, key=word_counts.get, default=None)
-
-                if most_common_word:
-                    print(
-                        f"Наиболее часто встречающееся слово из filtered_tokens: '{most_common_word}' (встретилось {word_counts[most_common_word]} раз)")
-                    theme = most_common_word
-
-                    if theme in model.wv.key_to_index:
-                        print(f"Найдены слова, схожие со словом '{theme}':")
-                        similar_words = model.wv.most_similar(theme, topn=100)
-
-                        for i, (word, similarity) in enumerate(similar_words, start=1):
-                            print(f"{i}) {word} (сходство: {similarity:.2f})")
-
-                            similar_words_list.append((word, similarity))
-
-                        print("Список схожих слов:", similar_words_list)
-                    else:
-                        print(f"Слово '{theme}' не найдено в тексте.")
-                else:
-                    print("Нет подходящих слов в filtered_tokens.")
-
-            results = await self.run_in_executor(similar_words_list, original_theme)
-            print(results)
-            print(len(results))
+            # Run classification on the filtered nouns
+            results = await self.run_in_executor(filtered_tokens, theme)
             filtered_results = [
                 (result['sequence'], result['scores'][0])
                 for result in results
@@ -180,7 +130,6 @@ class AnalysisThread(QThread):
             all_results[theme] = matching_phrases
 
         self.analysis_finished.emit(all_results)
-
 
 class App(QWidget):
     def __init__(self):
@@ -371,10 +320,9 @@ class App(QWidget):
         self.result_text.clear()
         threshold = self.slider.value() / 1000.0
 
-        skip_words = int(
-            self.skip_words_input.text()) if self.skip_words_input.text().isdigit() else 0
+        skip_words = int(self.skip_words_input.text()) if self.skip_words_input.text().isdigit() else 0  # Получаем количество пропусков
         self.progress_bar.show()
-        self.thread = AnalysisThread(files_data, threshold, skip_words)
+        self.thread = AnalysisThread(files_data, threshold, skip_words)  # Передаем параметр
         self.thread.progress.connect(self.update_progress)
         self.thread.new_result.connect(self.append_result)
         self.thread.analysis_finished.connect(self.save_results)
