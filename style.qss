@@ -3,7 +3,6 @@ QWidget {
     background-color: white;
     color: #333;
     border-radius: 10px;
-    padding: 10px;
 }
 
 /* Кнопки */
@@ -12,7 +11,8 @@ QPushButton {
     color: white;
     border: none;
     border-radius: 10px;
-    padding: 10px 20px;
+    padding: 8px 18px;  /* Уменьшены отступы для более гармоничного размера */
+    font-size: 14px; /* Уменьшен размер шрифта для согласованности */
 }
 
 QPushButton:hover {
@@ -23,22 +23,25 @@ QPushButton:hover {
 QLineEdit, QTextEdit {
     border: 1px solid #ccc;
     border-radius: 10px;
-    padding: 10px;
+    padding: 8px 10px;  /* Согласованные отступы */
+    font-size: 14px; /* Размер шрифта согласуется с другими элементами */
 }
 
 QLineEdit:focus, QTextEdit:focus {
-    border: 1px solid #d38cab; /* Синий цвет при фокусе */
+    border: 1px solid #d38cab;
 }
 
 /* Метки */
 QLabel {
     font-size: 14px;
+    margin-bottom: 5px;  /* Отступ снизу для меток */
 }
 
 /* Прогрессбар */
 QProgressBar {
     border-radius: 10px;
     background-color: #f0f0f0;
+    height: 20px; /* Подобран оптимальный размер для прогрессбара */
 }
 
 QProgressBar::chunk {
@@ -60,13 +63,12 @@ QSlider::groove:horizontal {
 QSlider::handle:horizontal {
     background: #edbdde;
     border: none;
-    width: 24px;  /* Увеличиваем ширину для лучшего восприятия */
-    height: 24px; /* Увеличиваем высоту для круглой формы */
-    border-radius: 12px; /* Круглая ручка */
-    margin: -8px 0; /* Центрируем ручку на дорожке */
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    margin: -8px 0;
 }
 
-/* Альтернативный стиль для вертикального слайдера, если нужно */
 QSlider::groove:vertical {
     width: 8px;
     background: #d38cab;
@@ -76,16 +78,15 @@ QSlider::groove:vertical {
 QSlider::handle:vertical {
     background: #d38cab;
     border: none;
-    width: 24px; /* Увеличиваем ширину для лучшего восприятия */
-    height: 24px; /* Увеличиваем высоту для круглой формы */
-    border-radius: 12px; /* Круглая ручка */
-    margin: 0 -8px; /* Центрируем ручку на дорожке */
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    margin: 0 -8px;
 }
-
 
 /* Чекбоксы */
 QCheckBox {
-    spacing: 5px;
+    spacing: 8px; /* Более гармоничное расстояние между чекбоксом и меткой */
 }
 
 QCheckBox::indicator {
@@ -95,13 +96,13 @@ QCheckBox::indicator {
 
 QCheckBox::indicator:unchecked {
     background-color: white;
-    border: 2px solid #d38cab; /* Синий цвет */
+    border: 2px solid #d38cab;
     border-radius: 5px;
 }
 
 QCheckBox::indicator:checked {
-    background-color: #d38cab; /* Синий цвет */
-    border: 2px solid #d38cab; /* Синий цвет */
+    background-color: #d38cab;
+    border: 2px solid #d38cab;
     border-radius: 5px;
 }
 
@@ -112,18 +113,18 @@ QFormLayout {
 
 /* Табуляция */
 QTabWidget::tab-bar {
-    alignment: left; /* Вкладки выровнены по левому краю */
+    alignment: left;
 }
 
 QTabBar::tab {
     background: white;
     border: 1px solid #ccc;
     border-radius: 10px;
-    padding: 10px;
+    padding: 8px 16px;  /* Уменьшены отступы для вкладок */
 }
 
 QTabBar::tab:selected {
-    background: #d38cab; /* Синий цвет для выбранной вкладки */
+    background: #d38cab;
     color: white;
 }
 
@@ -131,6 +132,7 @@ QTabBar::tab:selected {
 QGroupBox {
     border: 1px solid #ccc;
     border-radius: 10px;
+    padding: 10px;
 }
 
 /* Список виджетов */
@@ -140,10 +142,113 @@ QListWidget {
 }
 
 QListWidget::item {
-    padding: 10px;
+    padding: 8px 16px;  /* Согласованные отступы */
 }
 
 QListWidget::item:selected {
-    background: #d38cab; /* Синий цвет для выбранного элемента */
+    background: #d38cab;
     color: white;
+}
+
+/* Стиль для комбобокса */
+QComboBox {
+    border: 1px solid #ccc;
+    padding: 8px 10px;  /* Согласованные отступы */
+    background-color: white;
+    color: #333;
+    font-size: 14px; /* Гармоничный размер шрифта */
+}
+
+QComboBox QAbstractItemView {
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    background: white;
+    border: 1px solid gray;
+    box-shadow: transparent;
+    padding: 4px 4px 4px 4px
+}
+
+/* Стиль для выбранного элемента комбобокса */
+QComboBox:editable {
+    background-color: white;
+    color: #333;
+}
+
+QComboBox:!editable {
+    background-color: white;
+    color: #333;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background: transparent;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    width: 12px;
+    height: 12px;
+    background-color: #d38cab;
+    border-radius: 6px; /* Круглая стрелка */
+}
+
+QComboBox::down-arrow:hover {
+    background-color: #edbdde;
+}
+
+/* Стиль для скроллбаров */
+QScrollBar:horizontal {
+    height: 12px;  /* Высота горизонтального скроллбара */
+    background: #f0f0f0;  /* Цвет фона */
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #d38cab;  /* Цвет ручки */
+    border-radius: 6px;
+    min-width: 20px;  /* Минимальная ширина ручки */
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #edbdde;  /* Цвет ручки при наведении */
+}
+
+QScrollBar::add-line:horizontal {
+    border: none;
+    background: transparent;
+    width: 14px;
+}
+
+QScrollBar::sub-line:horizontal {
+    border: none;
+    background: transparent;
+    width: 14px;
+}
+
+QScrollBar:vertical {
+    width: 12px;  /* Ширина вертикального скроллбара */
+    background: #f0f0f0;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: #d38cab;  /* Цвет ручки */
+    border-radius: 6px;
+    min-height: 20px;  /* Минимальная высота ручки */
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #edbdde;  /* Цвет ручки при наведении */
+}
+
+QScrollBar::add-line:vertical {
+    border: none;
+    background: transparent;
+    height: 14px;
+}
+
+QScrollBar::sub-line:vertical {
+    border: none;
+    background: transparent;
+    height: 14px;
 }

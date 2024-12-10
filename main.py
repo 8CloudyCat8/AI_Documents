@@ -4,7 +4,7 @@ import asyncio
 import json
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit, QLineEdit, QLabel, QProgressBar, QSlider, QHBoxLayout,
-    QFileDialog, QCheckBox, QFormLayout, QTabWidget, QGroupBox, QListWidget, QListWidgetItem, QMessageBox
+    QFileDialog, QCheckBox, QFormLayout, QTabWidget, QGroupBox, QListWidget, QListWidgetItem, QMessageBox, QComboBox
 )
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from docx import Document
@@ -34,11 +34,12 @@ class AnalysisThread(QThread):
     result_ready = pyqtSignal(list)
     analysis_finished = pyqtSignal(dict)
 
-    def __init__(self, files_data, threshold, skip_words=1):
+    def __init__(self, files_data, threshold, topn):
         super().__init__()
         self.files_data = files_data
         self.threshold = threshold
-        self.skip_words = skip_words
+        self.topn = topn
+
 
     def classify_text(self, sequence, theme):
         result = zero_shot_pipeline(
@@ -106,8 +107,7 @@ class AnalysisThread(QThread):
             print(words)
             print(len(words))
 
-            selected_words = words[::self.skip_words + 1]
-            term_sequences = [term.normalized for term in term_extractor(' '.join(selected_words))]
+            term_sequences = [term.normalized for term in term_extractor(' '.join(words))]
 
             print(term_sequences)
             print(len(term_sequences))
@@ -128,7 +128,7 @@ class AnalysisThread(QThread):
 
             if theme in model.wv.key_to_index:
                 print(f"Найдены слова, схожие со словом '{theme}':")
-                similar_words = model.wv.most_similar(theme, topn=100)
+                similar_words = model.wv.most_similar(theme, topn=self.topn)
 
                 for i, (word, similarity) in enumerate(similar_words, start=1):
                     print(f"{i}) {word} (сходство: {similarity:.2f})")
@@ -148,7 +148,7 @@ class AnalysisThread(QThread):
 
                     if theme in model.wv.key_to_index:
                         print(f"Найдены слова, схожие со словом '{theme}':")
-                        similar_words = model.wv.most_similar(theme, topn=100)
+                        similar_words = model.wv.most_similar(theme, topn=self.topn)
 
                         for i, (word, similarity) in enumerate(similar_words, start=1):
                             print(f"{i}) {word} (сходство: {similarity:.2f})")
@@ -195,7 +195,7 @@ class App(QWidget):
 
     def init_ui(self):
         self.setWindowTitle('Анализ текста с классификацией')
-        self.resize(600, 600)
+        self.resize(800, 600)
 
         layout = QVBoxLayout()
 
@@ -301,11 +301,16 @@ class App(QWidget):
         self.file_list_widget = QFormLayout()
         layout.addLayout(self.file_list_widget)
 
-        self.skip_words_label = QLabel('Шаг пропуска слов (0 - не пропускать):', self)
-        layout.addWidget(self.skip_words_label)
+        # Ползунок для topn
+        self.topn_label = QLabel('Количество похожих слов для анализа: 100',
+                                 self)
+        layout.addWidget(self.topn_label)
 
-        self.skip_words_input = QLineEdit(self)
-        layout.addWidget(self.skip_words_input)
+        self.topn_slider = QSlider(Qt.Horizontal, self)
+        self.topn_slider.setRange(2, 1000)
+        self.topn_slider.setValue(100)
+        self.topn_slider.valueChanged.connect(self.update_topn_label)
+        layout.addWidget(self.topn_slider)
 
         self.threshold_label = QLabel('Порог сходства: 0.900', self)
         layout.addWidget(self.threshold_label)
@@ -339,27 +344,52 @@ class App(QWidget):
         threshold_value = self.slider.value() / 1000.0
         self.threshold_label.setText(f'Порог сходства: {threshold_value:.3f}')
 
+    def update_topn_label(self):
+        topn_value = self.topn_slider.value()
+        self.topn_label.setText(f'Количество похожих слов для анализа: {topn_value}')
+
     def load_docx(self):
         file_paths, _ = QFileDialog.getOpenFileNames(self, "Открыть .docx файлы", "", "Word Files (*.docx)")
         if file_paths:
+            output_file = 'analysis_results.json'
+            themes = []
+
+            if os.path.exists(output_file):
+                with open(output_file, 'r', encoding='utf-8') as f:
+                    try:
+                        data = json.load(f)
+                        themes = list(data.keys())
+                    except json.JSONDecodeError:
+                        pass
+
             for file_path in file_paths:
                 h_layout = QHBoxLayout()
                 checkbox = QCheckBox()
                 h_layout.addWidget(checkbox)
                 h_layout.addWidget(QLabel(file_path))
-                theme_input = QLineEdit()
-                h_layout.addWidget(theme_input)
+
+                theme_combo = QComboBox()
+                theme_combo.addItem("Своя тема")
+                theme_combo.addItems(themes)
+                h_layout.addWidget(theme_combo)
+
+                custom_theme_input = QLineEdit()
+                custom_theme_input.setPlaceholderText("Введите свою тему")
+                h_layout.addWidget(custom_theme_input)
+
                 self.file_list_widget.addRow(h_layout)
 
     def run_analysis(self):
+        """Запуск анализа"""
         files_data = []
         for index in range(self.file_list_widget.count()):
             h_layout = self.file_list_widget.itemAt(index).layout()
             checkbox = h_layout.itemAt(0).widget()
             theme_input = h_layout.itemAt(2).widget()
+            custom_theme_input = h_layout.itemAt(3).widget()
 
             if checkbox.isChecked():
-                theme = theme_input.text()
+                theme = theme_input.currentText() if theme_input.currentText() != "Своя тема" else custom_theme_input.text().strip()
                 if theme:
                     file_path = h_layout.itemAt(1).widget().text()
                     files_data.append((file_path, theme))
@@ -370,11 +400,10 @@ class App(QWidget):
 
         self.result_text.clear()
         threshold = self.slider.value() / 1000.0
+        topn = self.topn_slider.value()
 
-        skip_words = int(
-            self.skip_words_input.text()) if self.skip_words_input.text().isdigit() else 0
         self.progress_bar.show()
-        self.thread = AnalysisThread(files_data, threshold, skip_words)
+        self.thread = AnalysisThread(files_data, threshold, topn)
         self.thread.progress.connect(self.update_progress)
         self.thread.new_result.connect(self.append_result)
         self.thread.analysis_finished.connect(self.save_results)
