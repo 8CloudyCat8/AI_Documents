@@ -246,17 +246,26 @@ class App(QWidget):
         layout = QVBoxLayout()
 
         list_widget = QListWidget()
-
         for phrase, score in phrases:
-            list_item = QListWidgetItem(f"{phrase}, {score:.4f}%")
+            formatted_score = f"{score * 100:.1f}%"
+            list_item = QListWidgetItem(f"{phrase}, {formatted_score}")
             list_widget.addItem(list_item)
 
         layout.addWidget(list_widget)
 
-        delete_button = QPushButton('Удалить тему', self)
-        delete_button.clicked.connect(lambda: self.delete_theme(theme))
-        layout.addWidget(delete_button, alignment=Qt.AlignRight)
+        button_layout = QHBoxLayout()
 
+        delete_button = QPushButton('Удалить тему', self)
+        delete_button.setStyleSheet("background-color: #f44336; color: white;")
+        delete_button.clicked.connect(lambda: self.delete_theme(theme))
+        button_layout.addWidget(delete_button)
+
+        download_button = QPushButton('Скачать ключевые слова', self)
+        download_button.setStyleSheet("background-color: #4CAF50; color: white;")
+        download_button.clicked.connect(lambda: self.download_keywords(theme, phrases))
+        button_layout.addWidget(download_button)
+
+        layout.addLayout(button_layout)
         group_box.setLayout(layout)
         self.keywords_layout.addWidget(group_box)
 
@@ -291,6 +300,16 @@ class App(QWidget):
             else:
                 self.result_label.setText("Файл с ключевыми фразами не найден.")
 
+    def download_keywords(self, theme, phrases):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "Сохранить файл", f"{theme}.txt", "Text Files (*.txt)",
+                                                   options=options)
+        if file_path:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                for phrase, _ in phrases:
+                    file.write(phrase + '\n')
+            QMessageBox.information(self, "Успех", f"Ключевые слова для темы '{theme}' сохранены в файл.")
+
     def init_analysis_tab(self):
         layout = QVBoxLayout()
 
@@ -301,7 +320,6 @@ class App(QWidget):
         self.file_list_widget = QFormLayout()
         layout.addLayout(self.file_list_widget)
 
-        # Ползунок для topn
         self.topn_label = QLabel('Количество похожих слов для анализа: 100',
                                  self)
         layout.addWidget(self.topn_label)
@@ -341,8 +359,8 @@ class App(QWidget):
         self.tab_analysis.setLayout(layout)
 
     def update_threshold_label(self):
-        threshold_value = self.slider.value() / 1000.0
-        self.threshold_label.setText(f'Порог сходства: {threshold_value:.3f}')
+        threshold_value = self.slider.value() / 10.0
+        self.threshold_label.setText(f'Порог сходства: {threshold_value:}')
 
     def update_topn_label(self):
         topn_value = self.topn_slider.value()
@@ -448,7 +466,6 @@ class App(QWidget):
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(existing_data, f, ensure_ascii=False, indent=4)
 
-        self.result_label.setText(f"Сохранено элементов: {total_added_phrases}")
         self.load_keywords()
         self.progress_bar.setValue(100)
 
